@@ -31,15 +31,23 @@ class Network():
     def add_matching_edges(self, list):
         self.potential.add_edges_from(list)
 
-    def draw(self, pos):
+    def draw(self, pos, ax=None):
         width = 3
-        nx.draw_networkx_nodes(self.links, pos=pos, node_size=500)
-        nx.draw_networkx_labels(self.links, pos=pos)
-        nx.draw_networkx_edges(self.links, pos=pos, edge_color="gray", width=width)
-        nx.draw_networkx_edges(self.potential, pos=pos, width=width)
-        nx.draw_networkx_edges(self.matching, pos = pos, width=width, edge_color="r")
         labels=  {(e[0],e[1]) :e[2] for e in self.potential.edges.data("b")}
-        p =nx.draw_networkx_edge_labels(self.potential, pos=pos, edge_labels=labels)
+        if ax == None:
+            nx.draw_networkx_nodes(self.links, pos=pos, node_size=500)
+            nx.draw_networkx_labels(self.links, pos=pos)
+            nx.draw_networkx_edges(self.links, pos=pos, edge_color="gray", width=width)
+            nx.draw_networkx_edges(self.potential, pos=pos, width=width)
+            nx.draw_networkx_edges(self.matching, pos = pos, width=width, edge_color="r")
+            p =nx.draw_networkx_edge_labels(self.potential, pos=pos, edge_labels=labels)
+        else:
+            nx.draw_networkx_nodes(self.links, pos=pos, node_size=500, ax=ax)
+            nx.draw_networkx_labels(self.links, pos=pos, ax=ax)
+            nx.draw_networkx_edges(self.links, pos=pos, edge_color="gray", width=width, ax=ax)
+            nx.draw_networkx_edges(self.potential, pos=pos, width=width, ax=ax)
+            nx.draw_networkx_edges(self.matching, pos = pos, width=width, edge_color="r", ax=ax)
+            p =nx.draw_networkx_edge_labels(self.potential, pos=pos, edge_labels=labels, ax=ax)
 
     def iterate(self):
         steps = 0
@@ -116,3 +124,34 @@ class Network():
     def _update_discovery(self):
         self._discovery = nx.compose(self.matching, self.links)
         
+
+
+def get_edgetrap(b=3):
+    N = Network()
+
+    N.add_link("s", "u0")
+    N.add_link("s", "v0")
+
+    counter = 1
+        
+    for i in range(b):
+        N.add_matching_edge(f"v{i}", f"u{i}", b=counter)
+        counter += 1
+        N.add_matching_edge(f"v{i}", f"u{i+1}", b=counter)
+        counter += 1
+        N.add_link(f"u{i}", f"u{i+1}")
+        N.add_link(f"v{i}", f"v{i+1}")
+        N.add_matching_edge(f"v{i}", f"w{i}", b= counter)
+        counter += 1
+        N.add_link(f"u{i}", f"w{i}")
+        N.add_matching_edge(f"w{i}", f"v{i+1}", b= counter)
+        counter += 1
+
+    N.add_matching_edge(f"v{b}", f"u{b}", b=counter)
+
+    pos  ={"s":(-0.5,0.5)}
+    for i in range(b+1):
+        pos[f"v{i}"] = (i,1)
+        pos[f"u{i}"] = (i,0)
+        pos[f"w{i}"] = (i+1,2)
+    return N, pos
